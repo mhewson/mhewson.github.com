@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Pile of Shame Slayer — a painting tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f1ea;--card:#fff;--ink:#2a2420;--mut:#7a6f66;--acc:#b8341f;--acc2:#e8a317;--ok:#2f7d4f;--line:#e2dacd}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1917;--card:#292422;--ink:#f1ebe3;--mut:#a39a90;--acc:#e5533b;--acc2:#f0b429;--ok:#52b788;--line:#3d3531}}
+:root[data-theme="dark"]{--bg:#1c1917;--card:#292422;--ink:#f1ebe3;--mut:#a39a90;--acc:#e5533b;--acc2:#f0b429;--ok:#52b788;--line:#3d3531}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 Georgia,'Times New Roman',serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:26px;margin:4px 0;letter-spacing:.5px}h1 small{display:block;font-size:13px;color:var(--mut);font-style:italic;font-weight:400}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:2px;color:var(--mut);margin:26px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:700}
+button.ghost{background:transparent;color:var(--mut);border:1px solid var(--line);font-weight:400;padding:6px 10px;font-size:13px}
+button.big{width:100%;font-size:20px;padding:16px;background:var(--acc2);color:#2a2420;letter-spacing:1px}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.stats b{display:block;font-size:22px;color:var(--acc)}.stats span{font-size:11px;color:var(--mut);text-transform:uppercase}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0 4px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .4s}
+.bar.done i{background:var(--ok)}
+.mut{color:var(--mut);font-size:13px}
+.mission{border:2px solid var(--acc2);text-align:center}
+.mission .name{font-size:28px;font-weight:700;margin:6px 0}
+.slot{animation:pulse .12s infinite alternate}@keyframes pulse{from{opacity:.4}to{opacity:1}}
+.badge{display:inline-block;background:var(--bg);border:1px solid var(--acc2);border-radius:20px;padding:4px 10px;margin:3px;font-size:13px}
+.badge.locked{opacity:.35;border-style:dashed;filter:grayscale(1)}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);background:var(--acc2);color:#2a2420;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 6px 24px #0006;z-index:9;text-align:center;max-width:90%;animation:pop .3s}
+@keyframes pop{from{transform:translate(-50%,-20px) scale(.8);opacity:0}}
+.tag{font-size:12px;background:var(--ok);color:#fff;border-radius:6px;padding:2px 6px;margin-left:6px}
+.dates{font-size:12px;color:var(--mut);margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.num{width:70px}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gc{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.gc img,.noimg{width:100%;aspect-ratio:1;object-fit:cover;display:block;cursor:zoom-in;background:var(--bg)}
+.noimg{display:flex;align-items:center;justify-content:center;font-size:40px;cursor:default}
+.gt{padding:8px;font-size:14px;word-break:break-word}.gt span{font-size:12px;text-decoration:underline}
+.crow{cursor:pointer;padding:10px 14px}#fbar select{flex:1;min-width:110px}
+button:disabled{opacity:.4;cursor:default}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-top:8px}.sl3{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}@media(max-width:480px){.g2{grid-template-columns:1fr}}
+</style></head><body><main>
+<h1>Pile of Shame Slayer <small>sit down. roll. paint. repeat.</small></h1>
+
+<div class="card mut"><b style="color:var(--ink)">How it works:</b> add your unpainted units (or import a spreadsheet), then hit <b>Roll</b> for a project, a Deck of Many Colors card and a technique. Log what you paint with a photo and the paints you used, filter by project, manufacturer or material, and start a deadline challenge like Miniac's The Finisher. Everything lives only in <i>this browser</i> on this device. Nothing is sent anywhere, so use <b>Backup</b> at the bottom to keep a copy.</div>
+<div class="card stats" id="stats"></div>
+
+<h2>Today's mission</h2>
+<div class="card mission" id="mission"></div>
+<div class="row" style="margin-top:-2px;margin-bottom:6px"><label class="mut"><input type="checkbox" id="rFilt" checked> only roll within my filters</label>
+<label class="mut" style="margin-left:auto"><input type="checkbox" id="weight"> favour started</label><label class="mut"><input type="checkbox" id="rOld"> favour oldest purchases</label></div>
+<button class="big" id="roll">🎲 ROLL PROJECT + SCHEME + TECHNIQUE</button>
+
+<h2>Challenge</h2>
+<div id="finBox"></div><input type="file" id="fnFile" accept="image/*" style="display:none">
+<details class="card" id="deckBox"><summary><b>🃏 Deck &amp; technique settings</b></summary><div id="deckSet"></div></details>
+<h2>The collection</h2>
+<div class="card"><div class="row"><input id="nName" class="grow" placeholder="Entry (e.g. Ork Boyz, Stormcast Squad)"><input id="nTotal" class="num" type="number" min="1" placeholder="# minis"></div>
+<div class="row" style="margin-top:8px"><input id="nMfr" class="grow" list="mfrList" placeholder="Manufacturer (e.g. Games Workshop)"><datalist id="mfrList"></datalist><select id="nMat"><option value="">Material…</option><option>Plastic</option><option>Metal</option><option>Resin</option></select><button id="add">Add</button></div>
+<div class="row" style="margin-top:8px"><input id="nProj" class="grow" placeholder="Project(s), comma separated (optional)"><input id="nDate" type="date" title="Date bought (optional)"></div><div id="pChips"></div></div>
+<details class="card"><summary><b>📥 Import from a spreadsheet</b></summary>
+<p class="mut">Columns: <b>Name, Total minis</b>, and optionally <b>Done</b>, <b>Manufacturer</b>, <b>Material</b> (Plastic, Metal or Resin), <b>Date bought</b> (YYYY-MM-DD) and <b>Projects</b> (separate several with ;). In Google Sheets, select the cells and copy, then paste below — or upload a CSV (File → Download → .csv). A header row is fine.</p>
+<textarea id="impTxt" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);font:13px monospace;padding:8px" placeholder="Ork Boyz&#9;10&#9;3&#10;Intercessors&#9;5"></textarea>
+<div class="row" style="margin-top:8px"><input type="file" id="impFile" accept=".csv,.tsv,.txt,.json"><button id="impGo" style="margin-left:auto">Import</button></div></details>
+<div class="card" id="fbar"><div class="row"><input id="fQ" class="grow" placeholder="🔍 Search entries…"><select id="fSort"><option value="newest">Newest added</option><option value="oldest">Oldest added</option><option value="bought">Oldest purchase</option><option value="name">Name A–Z</option><option value="pct">Most complete</option><option value="left">Most minis left</option></select></div>
+<div class="row" style="margin-top:8px"><select id="fMat"><option value="">All materials</option><option>Plastic</option><option>Metal</option><option>Resin</option></select><select id="fMfr"></select><select id="fProj"></select><select id="fSt"><option value="">Any status</option><option value="new">Not started</option><option value="prog">In progress</option><option value="done">Finished</option></select></div>
+<div class="row" style="margin-top:8px"><label class="mut"><input type="checkbox" id="fHide"> hide finished</label><span class="mut" id="fCount" style="margin-left:auto"></span><button class="ghost" id="fTag">🏷️ Tag shown</button><button class="ghost" id="fClear">Clear</button></div></div>
+<div id="pgTop"></div><div id="list"></div><div id="pgBot"></div>
+
+<h2 id="galH">Painted gallery</h2>
+<div class="mut" id="galNote" style="margin:-4px 0 8px"></div>
+<div class="gal" id="gal"></div>
+<div id="galPg"></div>
+<h2>Badge shelf</h2>
+<div id="shelf"></div>
+
+<h2>Recent activity</h2>
+<div id="log" class="mut"></div>
+<h2>Backup &amp; restore</h2>
+<div class="card"><p class="mut">Copy your whole pile (including dates and badges) and keep it somewhere safe. To restore, paste it into the import box above and hit Import.</p>
+<div class="row"><button onclick="bk('json')">Copy full backup</button><button class="ghost" onclick="bk('csv')">Copy as spreadsheet (CSV)</button></div>
+<textarea id="bkTxt" rows="3" readonly style="display:none;width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);font:12px monospace;padding:8px"></textarea></div>
+<p class="mut" style="font-size:12px;margin-top:20px">Inspired by Ninjon's Deck of Many Colors, Miniac's The Finisher and <a href="https://www.youtube.com/@Amaliasminiatures" target="_blank" rel="noopener" style="color:inherit">Amalia's Miniatures</a>. An independent hobby project, not affiliated with any of them or with any miniature manufacturer.</p>
+<p class="mut" id="saveState"></p>
+</main>
+<div id="modal" style="display:none;position:fixed;inset:0;background:#000a;z-index:8;align-items:center;justify-content:center;padding:16px"><div class="card" style="width:100%;max-width:420px;margin:0"><b style="font-size:18px">Log painted minis</b><div class="mut" id="mTitle" style="margin-bottom:10px"></div>
+<input id="mDesc" placeholder="What did you paint? (Irish warrior, pig, Stompa...)" style="width:100%;margin-bottom:8px">
+<input id="mPaints" placeholder="Paints used (Mephiston Red, Abaddon Black…)" style="width:100%;margin-bottom:6px"><div id="mChips" style="margin-bottom:8px"></div><div id="mRecBox" style="display:none;margin:8px 0"></div>
+<div class="row" style="margin-bottom:8px"><label class="mut">How many minis?</label><input id="mCnt" class="num" type="number" min="1" value="1"></div>
+<input id="mFile" type="file" accept="image/*" style="width:100%"><img id="mPrev" style="display:none;max-width:100%;max-height:200px;margin-top:8px;border-radius:8px">
+<div class="row" style="margin-top:12px"><button class="ghost" onclick="closeLog()">Cancel</button><button id="mSave" style="margin-left:auto" onclick="saveLog()">Save</button></div></div></div>
+<div id="dlg" style="display:none;position:fixed;inset:0;background:#000a;z-index:11;align-items:center;justify-content:center;padding:16px"></div>
+<div id="zoom" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:#000d;z-index:10;align-items:center;justify-content:center;padding:12px"></div>
+<script>
+const EFFORT=[[1,'🖌️ Brush Touched'],[2,'🔥 Warming Up'],[3,'🎯 Tidy Trio'],[5,'⚔️ Proper Squad'],[8,'🛡️ Warband Raised'],[10,'💀 Horde Slayer'],[15,'🌋 Painting Berserker'],[20,'👑 Pile Conqueror'],[30,'🐉 Legend of the Desk']];
+const MILE=[['first','🥇 First Blood','Paint your very first mini'],['done1','🏆 Shame Slain','Finish an entire entry'],['done3','🏰 Triple Crown','Finish 3 entries'],['m25','🎨 Quarter Century','25 minis painted total'],['m100','💯 Centurion','100 minis painted total'],['streak3','📅 On a Roll','3-day painting streak'],['streak7','🔥 Weekly Warrior','7-day painting streak'],['big','⚡ Marathon','10+ minis in a single sitting']];
+let S={entries:[],log:[],badges:{},theme:null},current=null,doc=null;
+const $=id=>document.getElementById(id), uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtD=t=>t?new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'—';
+function dur(ms){if(ms==null)return '—';const m=Math.floor(ms/6e4);if(m<60)return Math.max(m,0)+'m';const h=Math.floor(m/60);if(h<48)return h+'h';return Math.floor(h/24)+'d '+(h%24)+'h'}
+function toast(t,ms){document.querySelectorAll('.toast').forEach(x=>x.remove());const d=document.createElement('div');d.className='toast';d.innerHTML=t;document.body.appendChild(d);setTimeout(()=>d.remove(),ms||3200)}
+function effortLabel(n){let l=null;for(const[k,v]of EFFORT)if(n>=k)l=v;return l}
+function stats(){const t=S.entries.reduce((a,e)=>a+e.total,0),d=S.entries.reduce((a,e)=>a+e.done,0);return{t,d,left:t-d,pct:t?Math.round(d/t*100):0,fin:S.entries.filter(e=>e.total&&e.done>=e.total).length}}
+function streak(){const days=new Set(S.log.map(l=>new Date(l.t).toDateString()));let s=0,d=new Date();if(!days.has(d.toDateString()))d.setDate(d.getDate()-1);while(days.has(d.toDateString())){s++;d.setDate(d.getDate()-1)}return s}
+
+// persistence: browser storage only
+let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(async()=>{let full=false;try{localStorage.setItem('shame',JSON.stringify(S))}catch(e){full=true}
+ $('saveState').textContent=full?'⚠️ Browser storage is full — copy a backup, then remove some photos.':'Saved in this browser ✓'},300)}
+async function load(){try{const j=localStorage.getItem('shame');if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}
+ render();
+ $('saveState').textContent='Saved in this browser only — use Backup below to keep a copy.'}
+
+function award(key,msgs){if(!S.badges[key]){S.badges[key]=Date.now();msgs.push('🏅 Badge unlocked: '+MILE.find(m=>m[0]==key)[1])}}
+function logMinis(id,n,x){x=x||{};const e=S.entries.find(x=>x.id==id);if(!e||n<1)return;n=Math.min(n,e.total-e.done);if(n<1)return;
+ const now=Date.now(),msgs=[];if(!e.firstAt)e.firstAt=now;e.done+=n;S.log.unshift({lid:uid(),t:now,id:e.id,name:e.name,n,desc:x.desc||'',img:x.img||null,paints:x.paints||[],card:(x.tag&&x.tag.card)||null,deck:(x.tag&&x.tag.deck)||'',skill:(x.tag&&x.tag.skill)||''});S.log=S.log.slice(0,1000);
+ const el=effortLabel(n);if(el)msgs.push(`<div style="font-size:18px">${el}</div>${n} mini${n>1?'s':''} painted!`);
+ if(e.done>=e.total){e.doneAt=now;msgs.push('☠️ ENTRY CONQUERED: '+esc(e.name));}
+ const st=stats();award('first',msgs);if(st.d>=25)award('m25',msgs);if(st.d>=100)award('m100',msgs);if(n>=10)award('big',msgs);
+ if(st.fin>=1)award('done1',msgs);if(st.fin>=3)award('done3',msgs);const sk=streak();if(sk>=3)award('streak3',msgs);if(sk>=7)award('streak7',msgs);
+ toast(msgs.join('<br>')+'<br><button style="margin-top:8px;background:#2a2420;color:#fff;padding:6px 14px" onclick="undoLog(\''+S.log[0].lid+'\')">↩ Undo</button>',7000);save();render()}
+
+function roll(){if(lk.e&&cur()&&cur().done<cur().total){applyRecipe();render();return}const pool=($('rFilt').checked?view():S.entries).filter(e=>e.done<e.total);if(!pool.length){toast('Nothing unpainted to roll from here 😈');return}
+ const w=$('weight').checked,ol=$('rOld').checked;const pick=()=>{if(!w&&!ol)return pool[Math.floor(Math.random()*pool.length)];const ws=pool.map(e=>(w&&e.done>0?3:1)*(ol?Math.min(1+(Date.now()-(e.boughtAt||e.addedAt))/5184e6,6):1)),tot=ws.reduce((a,b)=>a+b);let r=Math.random()*tot;for(let i=0;i<pool.length;i++){r-=ws[i];if(r<=0)return pool[i]}return pool[0]};
+ const final=pick();let i=0;const b=$('roll');b.disabled=true;const m=$('mission');
+ const iv=setInterval(()=>{m.innerHTML='<div class="name slot">'+esc(pool[i++%pool.length].name)+'</div>'},90);
+ setTimeout(()=>{clearInterval(iv);b.disabled=false;current=final.id;applyRecipe();render()},1400)}
+
+function render(){
+ if(S.theme)document.documentElement.dataset.theme=S.theme;
+ const st=stats();$('stats').innerHTML=`<div><b>${st.d}</b><span>painted</span></div><div><b>${st.left}</b><span>to go</span></div><div><b>${st.pct}%</b><span>of pile</span></div><div><b>${streak()}🔥</b><span>day streak</span></div>`;
+ const e=S.entries.find(x=>x.id==current);
+ $('mission').innerHTML=e&&e.done<e.total?`<div class="mut">Your project is…</div><div class="name">${esc(e.name)}</div><div class="mut">${e.done}/${e.total} done · ${e.total-e.done} left</div>${pal(e.id)}${missionExtra(e)}<div class="row" style="justify-content:center;margin-top:10px"><button onclick="openLog('${e.id}')">📸 Log painted minis</button></div>`:'<div class="mut">Hit the big button and let fate pick your next victim.</div>';
+ if(!F.pi){F.pi=1;F.proj=S.focus||''}
+ if(!F.mi){F.mi=1;const m=S.mis;if(m&&S.entries.some(x=>x.id==m.e)){current=m.e;mc=m.c;md=m.d||'fantasy';ms=m.s;mSrc=m.src||''}}
+ const pj=[...new Set(S.entries.flatMap(e=>e.projects||[]))].sort();if(F.proj&&F.proj!='__none'&&!pj.includes(F.proj))F.proj='';$('fProj').innerHTML='<option value="">All projects</option><option value="__none">No project</option>'+pj.map(p=>'<option>'+esc(p)+'</option>').join('');$('fProj').value=F.proj;
+ $('pChips').innerHTML=pj.length?'<div class="mut" style="font-size:12px;margin-top:4px">Tap to add a project:</div>'+pj.map(p=>'<span class="badge" style="cursor:pointer" data-p="'+esc(p)+'" onclick="addProj(this.dataset.p)">'+esc(p)+'</span>').join(''):'';
+ const mf=[...new Set(S.entries.map(e=>e.mfr).filter(Boolean))].sort();if(!mf.includes(F.mfr))F.mfr='';$('fMfr').innerHTML='<option value="">All manufacturers</option>'+mf.map(m=>'<option>'+esc(m)+'</option>').join('');$('fMfr').value=F.mfr;
+ const V=view();$('fCount').textContent=V.length+' of '+S.entries.length+' entries';
+ $('list').innerHTML=V.length?pg(V,'page','size').map(e=>{const p=e.total?Math.round(e.done/e.total*100):0,fin=e.done>=e.total;if(!F.open[e.id])return compactRow(e,p,fin);
+  return `<div class="card"><div class="row"><b class="grow">${esc(e.name)}${fin?'<span class="tag">DONE</span>':''}</b><span><b>${e.done}</b>/${e.total} · ${p}%</span></div>
+  ${tagLine(e)?'<div class="mut" style="margin-top:2px">'+tagLine(e)+'</div>':''}<div class="bar ${fin?'done':''}"><i style="width:${p}%"></i></div>
+  ${fin?'':`<div class="row"><button class="ghost" onclick="logMinis('${e.id}',1)">+1 quick</button><button class="ghost" onclick="minusOne('${e.id}')">−1</button><button class="ghost" onclick="openLog('${e.id}')">📸 Log with details</button><span class="mut">${e.total-e.done} left</span></div>`}
+  ${recLine(e)}${pal(e.id)}<div class="dates"><span>${e.boughtAt?'Bought: '+fmtD(e.boughtAt):'Added: '+fmtD(e.addedAt)}</span><span>First mini: ${fmtD(e.firstAt)}</span>
+  <span>${e.boughtAt?'Bought':'Added'} → 1st mini: ${dur(e.firstAt?e.firstAt-(e.boughtAt||e.addedAt):null)}</span><span>${fin?'Finished: '+fmtD(e.doneAt):'In progress: '+(e.firstAt?dur(Date.now()-e.firstAt):'not started, sat '+dur(Date.now()-(e.boughtAt||e.addedAt)))}</span>
+  ${fin?`<span>1st mini → done: ${dur(e.doneAt-e.firstAt)}</span><span>Total: ${dur(e.doneAt-(e.boughtAt||e.addedAt))}</span>`:''}</div>
+  <div class="row" style="margin-top:8px"><button class="ghost" onclick="tog('${e.id}')">▲ Collapse</button>${S.fin&&e.done<e.total?`<button class="ghost" onclick="finToggle('${e.id}')">${S.fin.ids.includes(e.id)?'🏁 Leave challenge':'🏁 Join challenge'}</button>`:''}${fin?`<button class="ghost" onclick="minusOne('${e.id}')">−1 (undo)</button>`:''}<button class="ghost" onclick="edit('${e.id}')">Edit</button><button class="ghost" onclick="del('${e.id}')">Delete</button></div></div>`}).join(''):(S.entries.length?'<div class="card mut">Nothing matches those filters.</div>':'<div class="card mut">No entries yet. Add your first unit above — be honest, no judgment.</div>');
+ const pgh=pager(V.length,'page','size',[10,25,50,100]);$('pgTop').innerHTML=pgh;$('pgBot').innerHTML=pgh;
+ $('shelf').innerHTML=MILE.map(m=>`<span class="badge ${S.badges[m[0]]?'':'locked'}" title="${m[2]}">${m[1]}${S.badges[m[0]]?'':' · '+m[2]}</span>`).join('')+'<div class="mut" style="margin-top:8px">Effort labels (per sitting): '+EFFORT.map(x=>x[0]+'+ '+x[1]).join(' · ')+'</div>';
+ $('log').innerHTML=S.log.slice(0,8).map(l=>`${fmtD(l.t)} — ${l.n} × ${esc(l.desc||l.name)}${l.desc?' <span class="mut">('+esc(l.name)+')</span>':''}`).join('<br>')||'Nothing yet.';gallery();renderDeck();renderFin();$('mfrList').innerHTML=[...new Set(S.entries.map(e=>e.mfr).filter(Boolean))].map(m=>'<option value="'+esc(m)+'">').join('');
+}
+function edit(id){const e=S.entries.find(x=>x.id==id);if(!e)return;const r0=e.recipe;dlg({title:'Edit entry',fields:[{label:'Name',value:e.name},{label:'Total minis',value:e.total,type:'number'},{label:'Manufacturer',value:e.mfr||''},{label:'Material',value:e.mat||'',options:['','Plastic','Metal','Resin']},{label:'Projects (comma separated)',value:(e.projects||[]).join(', ')},{label:'Date bought',value:e.boughtAt?ymd(e.boughtAt):'',type:'date'},{label:'Recipe card # (optional)',value:(r0&&r0.card)||'',type:'number'},{label:'Recipe technique (optional)',value:(r0&&r0.skill)||''},{label:'Recipe deck',value:r0&&r0.card?(r0.deck=='scifi'?'Sci-fi':'Fantasy'):'',options:['','Fantasy','Sci-fi']}],onOk:v=>{const t=parseInt(v[1]);if(!(t>0)){toast('Total must be 1 or more');return}e.name=v[0].trim()||e.name;e.total=t;e.mfr=v[2].trim();e.mat=v[3];e.projects=parsePaints(v[4]);e.boughtAt=v[5]?new Date(v[5]+'T12:00:00').getTime():null;const rc=parseInt(v[6]),rs=v[7].trim(),dk=v[8]=='Sci-fi'?'scifi':'fantasy';if(rc>0||rs){deck();e.recipe={card:rc>0?rc:null,deck:dk,note:rc>0?cnote(dk,rc):'',skill:rs,sdesc:(r0&&r0.skill==rs)?(r0.sdesc||''):''}}else delete e.recipe;if(e.done>t)e.done=t;if(e.done<t)e.doneAt=null;else if(!e.doneAt)e.doneAt=Date.now();S.log.forEach(l=>{if(l.id==id)l.name=e.name});save();render()}})}
+function del(id){const e=S.entries.find(x=>x.id==id);if(!e)return;dlg({title:'Delete entry?',text:'Delete "'+esc(e.name)+'" from your collection? Gallery cards you already logged will stay.',ok:'Delete',danger:true,onOk:()=>{S.entries=S.entries.filter(x=>x.id!=id);if(current==id)current=null;save();render()}})}
+$('add').onclick=()=>{const n=$('nName').value.trim(),t=+$('nTotal').value;if(!n||t<1){toast('Need a name and a mini count');return}
+ S.entries.push({id:uid(),name:n,total:t,done:0,mfr:$('nMfr').value.trim(),mat:$('nMat').value,projects:parsePaints($('nProj').value),boughtAt:$('nDate').value?new Date($('nDate').value+'T12:00:00').getTime():null,addedAt:Date.now(),firstAt:null,doneAt:null});$('nName').value='';$('nTotal').value='';$('nDate').value='';save();render()};
+$('roll').onclick=roll;
+function splitLine(l){if(l.includes('\t'))return l.split('\t').map(s=>s.trim());const o=[];let c='',q=false;for(const ch of l){if(ch=='"')q=!q;else if(ch==','&&!q){o.push(c.trim());c=''}else c+=ch}o.push(c.trim());return o}
+function bk(kind){const t=kind=='json'?JSON.stringify(S):'Name,Total,Done,Manufacturer,Material,Date,Projects\n'+S.entries.map(e=>'"'+e.name.replace(/"/g,"'")+'",'+e.total+','+e.done+',"'+(e.mfr||'').replace(/"/g,"'")+'",'+(e.mat||'')+','+(e.boughtAt?ymd(e.boughtAt):'')+',"'+(e.projects||[]).join(';').replace(/"/g,"'")+'"').join('\n');
+ const a=$('bkTxt');a.style.display='block';a.value=t;a.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+ toast(ok?'Copied to clipboard ✓':'Select the text below and copy it')}
+function doImport(){const raw=$('impTxt').value.trim();
+ if(raw[0]=='{'){try{const r=JSON.parse(raw);if(!Array.isArray(r.entries))throw 0;dlg({title:'Restore backup?',text:'This replaces your current pile.',ok:'Restore',danger:true,onOk:()=>{S=Object.assign({entries:[],log:[],badges:{}},r);save();render();$('impTxt').value='';toast('Backup restored ✓')}})}catch(e){toast('That backup could not be read')}return}
+const lines=$('impTxt').value.split(/\r?\n/).filter(l=>l.trim());let add=0,skip=0,bad=0;const batch=[];
+ const have=new Set(S.entries.map(e=>e.name.toLowerCase()));
+ for(const l of lines){const [n,t,d,mf,mt,dt,pj]=splitLine(l);const tot=parseInt(t);if(!n||!(tot>0)){bad++;continue}
+  if(have.has(n.toLowerCase())){skip++;continue}have.add(n.toLowerCase());
+  const done=Math.min(Math.max(parseInt(d)||0,0),tot),now=Date.now();
+  batch.push({id:uid(),name:n,total:tot,done,mfr:(mf||'').trim(),mat:({plastic:'Plastic',metal:'Metal',resin:'Resin'})[(mt||'').trim().toLowerCase()]||'',boughtAt:(dt&&!isNaN(Date.parse(dt.trim())))?new Date(dt.trim()+'T12:00:00').getTime():null,projects:(pj||'').split(';').map(x=>x.trim()).filter(Boolean),addedAt:now,firstAt:done?now:null,doneAt:done>=tot?now:null});add++}
+ S.entries.push(...batch.reverse());if(add){save();render();$('impTxt').value=''}
+ toast(`Imported ${add} entr${add==1?'y':'ies'}`+(skip?`<br>${skip} duplicate(s) skipped`:'')+(bad&&lines.length>1?`<br>${bad} row(s) skipped (header or bad count)`:''))}
+$('impGo').onclick=doImport;
+$('impFile').onchange=e=>{const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('impTxt').value=r.result};r.readAsText(f)}};
+let logFor=null,logImg=null;
+function openLog(id){const e=S.entries.find(x=>x.id==id);if(!e)return;logFor=id;logImg=null;$('mTitle').textContent=e.name+' ('+(e.total-e.done)+' left)';$('mDesc').value='';$('mCnt').value=1;$('mCnt').max=e.total-e.done;$('mFile').value='';$('mPaints').value='';chips(id);$('mPrev').style.display='none';$('mSave').disabled=false;recBox(id);$('modal').style.display='flex'}
+function closeLog(){$('modal').style.display='none'}
+function imgSrc(i){return !i?'':i.startsWith('blob:')?'/_blob/'+i.slice(5):i}
+async function shrink(file){const url=URL.createObjectURL(file);const im=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=url});const sc=Math.min(1,560/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);return new Promise(r=>c.toBlob(r,'image/jpeg',.75))}
+function toData(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)})}
+async function storeImg(b){try{const a=await claude.use('assets');if(a){const r=await a.upload(b);if(r&&r.id)return 'blob:'+r.id}}catch(e){}return toData(b)}
+$('mFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{logImg=await shrink(f);$('mPrev').src=URL.createObjectURL(logImg);$('mPrev').style.display='block'}catch(x){logImg=null;toast('Could not read that image')}};
+async function saveLog(){$('mSave').disabled=true;let img=null;if(logImg)img=await storeImg(logImg);closeLog();const ee=S.entries.find(x=>x.id==logFor);if(ee&&$('mRecBox').style.display!='none'&&$('mRec')&&$('mRec').checked)setRecipe(ee,!!($('mRecP')&&$('mRecP').checked));logMinis(logFor,parseInt($('mCnt').value)||1,{desc:$('mDesc').value.trim(),img,paints:parsePaints($('mPaints').value),tag:logTag(logFor)})}
+function zoom(l){const x=S.log.find(a=>a.lid==l);if(x&&x.img){$('zoom').innerHTML='<img src="'+imgSrc(x.img)+'" style="max-width:100%;max-height:100%;border-radius:8px">';$('zoom').style.display='flex'}}
+function editLog(l){const x=S.log.find(a=>a.lid==l);if(!x)return;dlg({title:'Edit card',fields:[{label:'What did you paint?',value:x.desc||''},{label:'Paints used (comma separated)',value:(x.paints||[]).join(', ')}],onOk:v=>{x.desc=v[0].trim();x.paints=parsePaints(v[1]);save();render()}})}
+function delLog(l){const x=S.log.find(a=>a.lid==l);if(!x)return;dlg({title:'Remove this card?',text:'The '+x.n+' mini(s) go back on the pile.',ok:'Remove',danger:true,onOk:()=>{const e=S.entries.find(a=>a.id==x.id);if(e){e.done=Math.max(0,e.done-x.n);if(e.done<e.total)e.doneAt=null;if(!e.done)e.firstAt=null}S.log=S.log.filter(a=>a.lid!=l);save();render()}})}
+function gallery(){const all=gView(),g=pg(all,'gpage','gsize');$('galNote').textContent=(F.q||F.mat||F.mfr||F.proj||F.st)?'Showing '+all.length+' painted card'+(all.length==1?'':'s')+' matching the filters above.':'';$('galPg').innerHTML=pager(all.length,'gpage','gsize',[12,24,48]);$('gal').innerHTML=g.length?g.map(l=>`<div class="gc">${l.img?`<img src="${imgSrc(l.img)}" onclick="zoom('${l.lid}')">`:'<div class="noimg">🎨</div>'}<div class="gt"><b>${esc(l.desc||'Painted')}</b>${l.n>1?' ×'+l.n:''}<div class="mut">${esc(l.name)} · ${fmtD(l.t)}</div>${(l.card||l.skill)?'<div class="mut" style="font-size:12px">'+(l.card?'🃏 '+(l.deck?dname(l.deck)+' ':'')+'#'+l.card:'')+(l.card&&l.skill?' · ':'')+esc(l.skill||'')+'</div>':''}${l.paints&&l.paints.length?'<div class="mut" style="font-size:12px">🎨 '+l.paints.map(esc).join(', ')+'</div>':''}<span onclick="editLog('${l.lid}')">edit</span> · <span onclick="delLog('${l.lid}')">remove</span></div></div>`).join(''):'<div class="card mut" style="grid-column:1/-1">'+(S.log.some(l=>l.desc||l.img||(l.paints&&l.paints.length))?'No painted minis match those filters.':'Nothing yet. Use "Log with details" to add a description and photo of what you painted.')+'</div>'}
+function dlg(o){const d=$('dlg');let h='<div class="card" style="width:100%;max-width:380px;margin:0"><b style="font-size:18px">'+o.title+'</b>';if(o.text)h+='<p class="mut">'+o.text+'</p>';(o.fields||[]).forEach((f,i)=>{h+='<div class="mut" style="margin-top:8px">'+f.label+'</div>'+(f.options?'<select id="df'+i+'" style="width:100%">'+f.options.map(o=>'<option value="'+esc(o)+'"'+(o==f.value?' selected':'')+'>'+(o||'Not set')+'</option>').join('')+'</select>':'<input id="df'+i+'" type="'+(f.type||'text')+'" style="width:100%" value="'+esc(f.value==null?'':f.value)+'">')});
+h+='<div class="row" style="margin-top:14px"><button class="ghost" id="dNo">Cancel</button><button id="dOk" style="margin-left:auto'+(o.danger?';background:#a02020':'')+'">'+(o.ok||'Save')+'</button></div></div>';d.innerHTML=h;d.style.display='flex';
+$('dNo').onclick=()=>{d.style.display='none'};$('dOk').onclick=()=>{const v=(o.fields||[]).map((f,i)=>$('df'+i).value);d.style.display='none';o.onOk(v)};const f0=$('df0');if(f0)f0.focus()}
+function parsePaints(t){const o=[];String(t||'').split(/[,\n]/).forEach(p=>{p=p.trim();if(p&&!o.some(q=>q.toLowerCase()==p.toLowerCase()))o.push(p)});return o}
+function entryPal(id){const o=[];S.log.forEach(l=>{if(l.id==id)(l.paints||[]).forEach(p=>{if(!o.some(q=>q.toLowerCase()==p.toLowerCase()))o.push(p)})});return o}
+function allPaints(){const o=[];S.log.forEach(l=>(l.paints||[]).forEach(p=>{if(!o.some(q=>q.toLowerCase()==p.toLowerCase()))o.push(p)}));return o}
+function pal(id){const p=entryPal(id);return p.length?'<div class="mut" style="margin-top:6px">🎨 Palette so far: '+p.map(esc).join(' · ')+'</div>':''}
+function chips(id){const e=entryPal(id),a=allPaints().filter(p=>!e.some(q=>q.toLowerCase()==p.toLowerCase()));const l=e.concat(a).slice(0,16);$('mChips').innerHTML=l.length?'<div class="mut" style="font-size:12px">Tap to add'+(e.length?' (this entry\'s paints first)':'')+':</div>'+l.map(p=>'<span class="badge" style="cursor:pointer" data-p="'+esc(p)+'" onclick="addPaint(this.dataset.p)">'+esc(p)+'</span>').join(''):''}
+function addPaint(p){const c=parsePaints($('mPaints').value);if(!c.some(q=>q.toLowerCase()==p.toLowerCase()))c.push(p);$('mPaints').value=c.join(', ')}
+function revertLog(l){const x=S.log.find(a=>a.lid==l);if(!x)return;const e=S.entries.find(a=>a.id==x.id);if(e){e.done=Math.max(0,e.done-x.n);if(e.done<e.total)e.doneAt=null;if(!e.done)e.firstAt=null}S.log=S.log.filter(a=>a.lid!=l);save();render()}
+function undoLog(l){revertLog(l);toast('Undone ↩')}
+function minusOne(id){const e=S.entries.find(a=>a.id==id);if(!e||e.done<1)return;const x=S.log.find(a=>a.id==id&&a.n>0);if(x){x.n--;if(x.n<1)S.log=S.log.filter(a=>a!==x)}e.done--;if(e.done<e.total)e.doneAt=null;if(!e.done)e.firstAt=null;save();render();toast('Removed one mini')}
+const F={q:'',mat:'',mfr:'',st:'',proj:'',pi:0,sort:'newest',hide:false,page:0,gpage:0,size:25,gsize:12,open:{}};
+function view(){const q=F.q.toLowerCase(),ix=new Map(S.entries.map((e,i)=>[e,i]));
+ const a=S.entries.filter(e=>(!q||(e.name+' '+(e.mfr||'')+' '+(e.mat||'')).toLowerCase().includes(q))&&(!F.mat||e.mat==F.mat)&&(!F.mfr||e.mfr==F.mfr)&&(!F.proj||(F.proj=='__none'?!(e.projects||[]).length:(e.projects||[]).includes(F.proj)))&&(F.st==''||(F.st=='new'&&!e.done)||(F.st=='prog'&&e.done>0&&e.done<e.total)||(F.st=='done'&&e.done>=e.total))&&(!F.hide||e.done<e.total));
+ const p=e=>e.total?e.done/e.total:0;
+ const so={newest:(x,y)=>ix.get(y)-ix.get(x),oldest:(x,y)=>ix.get(x)-ix.get(y),bought:(x,y)=>(x.boughtAt||x.addedAt)-(y.boughtAt||y.addedAt),name:(x,y)=>x.name.localeCompare(y.name),pct:(x,y)=>p(y)-p(x),left:(x,y)=>(y.total-y.done)-(x.total-x.done)};
+ return a.sort(so[F.sort]||so.newest)}
+function compactRow(e,p,fin){return `<div class="card crow" onclick="tog('${e.id}')"><div class="row"><b class="grow" style="min-width:0">${esc(e.name)}${fin?'<span class="tag">DONE</span>':''}<div class="mut" style="font-weight:400">${tagLine(e)}</div></b><span style="white-space:nowrap"><b>${e.done}</b>/${e.total} · ${p}%</span>${fin?'':`<button class="ghost" onclick="event.stopPropagation();logMinis('${e.id}',1)">+1</button>`}</div><div class="bar ${fin?'done':''}" style="height:6px;margin:6px 0 0"><i style="width:${p}%"></i></div></div>`}
+function tog(id){F.open[id]=!F.open[id];render()}
+$('fQ').oninput=e=>{F.q=e.target.value;F.page=0;F.gpage=0;render()};
+[['fSort','sort'],['fMat','mat'],['fMfr','mfr'],['fProj','proj'],['fSt','st']].forEach(([i,k])=>{$(i).onchange=e=>{F[k]=e.target.value;F.page=0;F.gpage=0;render()}});
+$('fHide').onchange=e=>{F.hide=e.target.checked;F.page=0;F.gpage=0;render()};
+$('fClear').onclick=()=>{Object.assign(F,{q:'',mat:'',mfr:'',st:'',proj:'',hide:false,page:0,gpage:0});S.focus='';save();$('fQ').value='';$('fMat').value='';$('fSt').value='';$('fHide').checked=false;render()};
+function ymd(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function tagLine(e){return [e.mfr,e.mat].concat((e.projects||[]).length?['🏷️ '+e.projects.join(', ')]:[]).filter(Boolean).map(esc).join(' · ')}
+function addProj(p){const c=parsePaints($('nProj').value);if(!c.some(q=>q.toLowerCase()==p.toLowerCase()))c.push(p);$('nProj').value=c.join(', ')}
+$('fProj').addEventListener('change',()=>{S.focus=F.proj;save()});
+$('fTag').onclick=()=>{const V=view();if(!V.length){toast('Nothing shown to tag');return}dlg({title:'Tag '+V.length+' shown entries',text:'Applies to every entry matching the current search and filters, not just the ones on screen.',fields:[{label:'Action',value:'Add',options:['Add','Remove']},{label:'Project name',value:F.proj&&F.proj!='__none'?F.proj:''}],ok:'Apply',onOk:v=>{const p=v[1].trim();if(!p){toast('Type a project name');return}V.forEach(e=>{const a=(e.projects||[]).filter(x=>x.toLowerCase()!=p.toLowerCase());e.projects=v[0]=='Add'?a.concat(p):a});save();render();toast((v[0]=='Add'?'Tagged ':'Removed tag from ')+V.length+' entries')}})};
+function pg(a,pk,sk){const n=Math.max(1,Math.ceil(a.length/F[sk]));if(F[pk]>=n)F[pk]=n-1;if(F[pk]<0)F[pk]=0;return a.slice(F[pk]*F[sk],(F[pk]+1)*F[sk])}
+function pager(total,pk,sk,sizes){const z=F[sk],n=Math.max(1,Math.ceil(total/z)),p=F[pk];if(total<=sizes[0])return '';
+ return `<div class="row" style="justify-content:center;margin:8px 0"><button class="ghost" ${p<=0?'disabled':''} onclick="goPage('${pk}',0)">«</button><button class="ghost" ${p<=0?'disabled':''} onclick="goPage('${pk}',${p-1})">‹ Prev</button><span class="mut">Page <input type="number" min="1" max="${n}" value="${p+1}" style="width:62px;padding:6px" onchange="goPage('${pk}',this.value-1)"> of ${n}</span><button class="ghost" ${p>=n-1?'disabled':''} onclick="goPage('${pk}',${p+1})">Next ›</button><button class="ghost" ${p>=n-1?'disabled':''} onclick="goPage('${pk}',${n-1})">»</button><select onchange="setSize('${sk}','${pk}',+this.value)">${sizes.map(x=>`<option value="${x}"${x==z?' selected':''}>${x} per page</option>`).join('')}</select></div>`}
+function goPage(pk,v){F[pk]=Math.max(0,parseInt(v)||0);render();const t=pk=='page'?$('fbar'):$('galH');if(t&&t.scrollIntoView)t.scrollIntoView({block:'start'})}
+function setSize(sk,pk,v){F[sk]=v;F[pk]=0;render()}
+function stOK(e){return F.st==''||(F.st=='new'&&!e.done)||(F.st=='prog'&&e.done>0&&e.done<e.total)||(F.st=='done'&&e.done>=e.total)}
+function gView(){const q=F.q.toLowerCase(),em=new Map(S.entries.map(e=>[e.id,e]));
+ return S.log.filter(l=>l.desc||l.img||(l.paints&&l.paints.length)).filter(l=>{const e=em.get(l.id);
+  if(q){const hay=((l.desc||'')+' '+(l.paints||[]).join(' ')+' '+l.name+' '+(e?(e.mfr||'')+' '+(e.mat||'')+' '+(e.projects||[]).join(' '):'')).toLowerCase();if(!hay.includes(q))return false}
+  if(F.mat||F.mfr||F.proj||F.st){if(!e)return false;if(F.mat&&e.mat!=F.mat)return false;if(F.mfr&&e.mfr!=F.mfr)return false;if(F.proj&&(F.proj=='__none'?(e.projects||[]).length:!(e.projects||[]).includes(F.proj)))return false;if(!stOK(e))return false}
+  return true})}
+let mc=null,md='fantasy',ms=null,mSrc='',lk={e:0,c:0,s:0};
+const DEF_SKILLS=[['Speed paint it','Set a timer: 20 minutes max per mini. Big brush, no fiddling, done beats perfect.'],['NMM time','Non-metallic metal on armour, weapons or trim. Think light source, sharp contrast and a bright reflected edge.'],['Airbrush skill builder','Use the airbrush for the base, a smooth gradient or zenithal. Practise control, not coverage.'],['Filters and glazes','Unify the model by glazing thin coloured filters over the base coat.'],['Contrast and speed paints','Contrast or speed paints only, plus a drybrush or an edge to finish.'],['Drybrush only','No smooth layers. Build everything with drybrushing, dark to light.'],['Three-paint challenge','At most three paints plus black and white for the whole model.'],['Zenithal and colour modulation','Prime from above in light and shade, then push colour temperature from top to bottom.'],['Object source lighting','Pick one glowing element and light the nearby surfaces from it.'],['Wet blend a big area','Blend a cloak, robe, base or hide with wet blending.'],['Edge highlight everything','Clean, confident edge highlights on every armour and cloth edge.'],['Weathering and rust','Chipping, sponge damage, rust streaks and pigments. Make it look lived in.'],['Spot colour','Keep the model muted or monochrome except one punchy colour.'],['Freehand a detail','Freehand a banner, tabard, shield or tattoo, even a simple one.'],['Texture time','Stipple, sponge, salt or texture paste on cloaks, skin, rock or leather, then paint over it.'],['Desaturate','Pull the colours back: mute every hue with grey or its complement for a grim, cohesive look.'],['Saturate','Push the colours: pure, punchy, high-saturation paints and bright highlights.'],['Underpaint','Build the colour in an underpainting first (a glowing or contrasting base), then glaze or layer over it.']];
+function skills(){if(!Array.isArray(S.skills))S.skills=DEF_SKILLS.map(([n,d])=>({id:uid(),name:n,desc:d,on:true}));return S.skills}
+function dname(d){return d=='scifi'?'Sci-fi':d=='fantasy'?'Fantasy':''}
+function dico(d){return d=='scifi'?'🚀':'🐉'}
+function ckey(d,n){return (d||'fantasy')+n}
+function cnote(d,n){return S.cardNotes[ckey(d,n)]||S.cardNotes[n]||''}
+function deck(){let d=S.deck;if(!d||d.v!=2){d=S.deck={v:2,size:50,use:'both',noRepeat:true,drawn:{fantasy:[],scifi:[]}}}if(!S.cardNotes)S.cardNotes={};if(!S.projRecipes)S.projRecipes={};return d}
+function cur(){return S.entries.find(x=>x.id==current)}
+function saveMis(){S.mis={e:current,c:mc,d:md,s:ms,src:mSrc};save()}
+function drawCard(){const d=deck();const dk=d.use=='both'?(Math.random()<.5?'fantasy':'scifi'):d.use;const dr=d.drawn[dk]=d.drawn[dk]||[];let pool=[];for(let i=1;i<=d.size;i++)if(!d.noRepeat||!dr.includes(i))pool.push(i);if(!pool.length){d.drawn[dk]=[];pool=Array.from({length:d.size},(_,i)=>i+1);toast(dname(dk)+' deck reshuffled 🔀')}const n=pool[Math.floor(Math.random()*pool.length)];if(d.noRepeat)d.drawn[dk].push(n);return{n,d:dk}}
+function drawSkill(){const a=skills().filter(x=>x.on);if(!a.length)return{name:'Free choice',desc:'No techniques are switched on, so paint it your way.'};const s=a[Math.floor(Math.random()*a.length)];return{name:s.name,desc:s.desc}}
+function recipeOf(e){if(e.recipe)return{r:e.recipe,src:'this entry'};deck();for(const p of e.projects||[]){const r=S.projRecipes[p];if(r)return{r,src:'project '+p}}return null}
+function applyRecipe(){const e=cur();if(!e)return;const rc=recipeOf(e);if(rc){mc=rc.r.card||null;md=rc.r.deck||'fantasy';ms={name:rc.r.skill||'Free choice',desc:rc.r.sdesc||''};mSrc=rc.src}else{mSrc='';if(!lk.c||mc==null){const c=drawCard();mc=c.n;md=c.d}if(!lk.s||!ms)ms=drawSkill()}saveMis()}
+function rollOne(k){if(k=='e'){const was=lk.e;lk.e=0;roll();lk.e=was;return}if(!cur())return;if(mSrc){toast('This entry has a recipe locked in. Clear it first to reroll.');return}if(k=='c'){const c=drawCard();mc=c.n;md=c.d}else ms=drawSkill();saveMis();render()}
+function togLock(k){lk[k]=lk[k]?0:1;render()}
+function setNote(v){deck();if(mc){S.cardNotes[ckey(md,mc)]=v.trim();const e=cur();if(e&&e.recipe&&e.recipe.card==mc&&(e.recipe.deck||'fantasy')==md)e.recipe.note=v.trim()}save()}
+function missionExtra(e){if(mc==null&&!ms)return '';deck();const note=mc?cnote(md,mc):'';
+ const lb=k=>`<button class="ghost" style="padding:2px 8px" onclick="togLock('${k}')">${lk[k]?'🔒':'🔓'}</button><button class="ghost" style="padding:2px 8px" onclick="rollOne('${k}')">↻</button>`;
+ return `<div class="row" style="justify-content:center;margin:6px 0"><span class="mut">Project</span>${lb('e')}</div>${mSrc?`<div class="mut" style="margin:6px 0">🔗 Locked to the recipe for ${esc(mSrc)} <span style="text-decoration:underline;cursor:pointer" onclick="clearRecipe()">clear</span></div>`:''}<div class="g2"><div class="sl3"><div class="mut">🃏 Scheme ${mSrc?'':lb('c')}</div><b style="font-size:20px">${mc?dico(md)+' '+dname(md)+' #'+mc:'No card'}</b>${mc?`<input placeholder="What colours are on the card?" value="${esc(note)}" onchange="setNote(this.value)" style="width:100%;margin-top:6px">`:''}</div><div class="sl3"><div class="mut">🛠️ Technique ${mSrc?'':lb('s')}</div><b style="font-size:20px">${esc(ms?ms.name:'')}</b><div class="mut">${esc(ms?ms.desc:'')}</div></div></div>`}
+function recLine(e){const rc=recipeOf(e);if(!rc)return '';const r=rc.r;return `<div class="mut" style="margin-top:6px">🃏 ${r.card?dname(r.deck||'fantasy')+' #'+r.card+(r.note?' ('+esc(r.note)+')':''):'Recipe'}${r.skill?' · 🛠️ '+esc(r.skill):''} <i>(${esc(rc.src)})</i> <span style="text-decoration:underline;cursor:pointer" onclick="clearRecipe('${e.id}')">clear</span></div>`}
+function clearRecipe(id){const e=S.entries.find(x=>x.id==(id||current));if(!e)return;if(e.recipe)delete e.recipe;else{deck();const p=(e.projects||[]).find(q=>S.projRecipes[q]);if(p)delete S.projRecipes[p]}if(e.id==current)mSrc='';saveMis();render()}
+function setRecipe(e,proj){deck();const r={card:mc||null,deck:md,note:mc?cnote(md,mc):'',skill:ms?ms.name:'',sdesc:ms?ms.desc:''};e.recipe=Object.assign({},r);mSrc='this entry';if(proj)(e.projects||[]).forEach(p=>{S.projRecipes[p]=Object.assign({},r)});saveMis()}
+function logTag(id){const e=S.entries.find(x=>x.id==id);if(!e)return null;if(id==current&&(mc!=null||ms))return{card:mc,deck:md,skill:ms?ms.name:''};const rc=recipeOf(e);return rc?{card:rc.r.card,deck:rc.r.deck||'fantasy',skill:rc.r.skill}:null}
+function recBox(id){const e=S.entries.find(x=>x.id==id),b=$('mRecBox');if(!(e&&id==current&&(mc!=null||ms)&&!mSrc)){b.style.display='none';return}const ps=e.projects||[];b.style.display='block';b.innerHTML=`<label class="mut" style="display:block"><input type="checkbox" id="mRec" checked> Use <b>${mc?dname(md)+' #'+mc+' + ':''}${esc(ms?ms.name:'')}</b> for the rest of ${esc(e.name)}</label>`+(ps.length?`<label class="mut" style="display:block;margin-top:4px"><input type="checkbox" id="mRecP" checked> ...and every entry in ${ps.map(esc).join(', ')}</label>`:'')}
+function renderDeck(){const d=deck(),sk=skills();$('deckSet').innerHTML=`<p class="mut">The Deck of Many Colors: draw a card number from the fantasy deck, the sci-fi deck or both.</p><div class="row"><label class="mut">Deck</label><select onchange="setUse(this.value)"><option value="both"${d.use=='both'?' selected':''}>Both (random)</option><option value="fantasy"${d.use=='fantasy'?' selected':''}>Fantasy</option><option value="scifi"${d.use=='scifi'?' selected':''}>Sci-fi</option></select><label class="mut">Cards 1 to</label><input class="num" type="number" min="1" value="${d.size}" onchange="setDeck(this.value)"></div><div class="row" style="margin-top:6px"><label class="mut"><input type="checkbox" ${d.noRepeat?'checked':''} onchange="setNoRepeat(this.checked)"> no repeats until reshuffled</label><span class="mut">🐉 ${d.drawn.fantasy.length}/${d.size} · 🚀 ${d.drawn.scifi.length}/${d.size} drawn</span><button class="ghost" onclick="reshuffle()">Reshuffle</button></div><h2 style="margin-top:14px">Techniques (tick to include in the roll)</h2>`+sk.map(x=>`<div class="row" style="margin:4px 0"><input type="checkbox" ${x.on?'checked':''} onchange="togSkill('${x.id}')"><div class="grow"><b>${esc(x.name)}</b><div class="mut" style="font-size:12px">${esc(x.desc)}</div></div><button class="ghost" onclick="editSkill('${x.id}')">Edit</button><button class="ghost" onclick="delSkill('${x.id}')">×</button></div>`).join('')+`<div class="row" style="margin-top:8px"><button class="ghost" onclick="editSkill()">+ Add technique</button><button class="ghost" onclick="resetSkills()">Restore defaults</button></div>`}
+function setUse(v){deck().use=v;save();render()}
+function setDeck(v){const d=deck();d.size=Math.max(1,parseInt(v)||1);['fantasy','scifi'].forEach(k=>{d.drawn[k]=(d.drawn[k]||[]).filter(n=>n<=d.size)});save();render()}
+function setNoRepeat(c){deck().noRepeat=c;save();render()}
+function reshuffle(){deck().drawn={fantasy:[],scifi:[]};save();render();toast('Decks reshuffled 🔀')}
+function togSkill(id){const x=skills().find(a=>a.id==id);if(x){x.on=!x.on;save();render()}}
+function editSkill(id){const x=id?skills().find(a=>a.id==id):null;dlg({title:x?'Edit technique':'New technique',fields:[{label:'Name',value:x?x.name:''},{label:'What to do',value:x?x.desc:''}],onOk:v=>{const n=v[0].trim();if(!n){toast('It needs a name');return}if(x){x.name=n;x.desc=v[1].trim()}else skills().push({id:uid(),name:n,desc:v[1].trim(),on:true});save();render()}})}
+function delSkill(id){const x=skills().find(a=>a.id==id);if(!x)return;dlg({title:'Delete technique?',text:'Delete "'+esc(x.name)+'"?',ok:'Delete',danger:true,onOk:()=>{S.skills=S.skills.filter(a=>a.id!=id);save();render()}})}
+function resetSkills(){dlg({title:'Restore default techniques?',text:'This replaces your technique list with the built-in one.',ok:'Restore',onOk:()=>{S.skills=null;skills();save();render()}})}
+let finKind=null;
+function finStats(f){const ents=f.ids.map(id=>S.entries.find(e=>e.id==id)).filter(Boolean);let tot=0,done=0,ec=0;const lines=[];ents.forEach(e=>{const b=Math.min(f.base[e.id]||0,e.total),d=Math.max(0,e.done-b);tot+=e.total-b;done+=d;if(e.done>=e.total&&b<e.total)ec++;lines.push('• '+e.name+': '+e.done+'/'+e.total+(d?' (+'+d+')':''))});
+ const logs=S.log.filter(l=>l.t>=f.start&&f.ids.includes(l.id)),tech=[...new Set(logs.map(l=>l.skill).filter(Boolean))],paints=[...new Set(logs.flatMap(l=>l.paints||[]))].slice(0,15);
+ return{ents,tot,done,ec,lines,tech,paints}}
+function finSnap(f,st,end){return{name:f.name,start:f.start,end,deadline:f.deadline,done:st.done,tot:st.tot,ec:st.ec,lines:st.lines,tech:st.tech,paints:st.paints,before:f.before,after:f.after}}
+function sumText(h){return h.name+'\n'+fmtD(h.start)+' → '+fmtD(h.end)+' (deadline '+fmtD(h.deadline)+')\nFinished '+h.done+' of '+h.tot+' committed minis · '+h.ec+' entr'+(h.ec==1?'y':'ies')+' completed\n'+h.lines.join('\n')+(h.tech.length?'\nTechniques: '+h.tech.join(', '):'')+(h.paints.length?'\nPaints: '+h.paints.join(', '):'')}
+function finPace(){const since=Date.now()-28*864e5;let m=0;S.log.forEach(l=>{if(l.t>=since)m+=l.n});return m?m/4:null}
+async function finShrink(file,max){const url=URL.createObjectURL(file);const im=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=url});const sc=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);return new Promise(r=>c.toBlob(r,'image/jpeg',.78))}
+function copyText(t){const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}a.remove();toast(ok?'Copied ✓':'Copy was blocked. Select the text and copy it yourself.')}
+function finCopy(){const a=$('finTxt');if(a)copyText(a.value)}
+function histCopy(i){copyText(sumText(S.finHist[i]))}
+function histDel(i){dlg({title:'Delete this record?',ok:'Delete',danger:true,onOk:()=>{S.finHist.splice(i,1);save();render()}})}
+function finStart(mode){const n=($('fnName').value||'My challenge').trim(),d=$('fnDate').value;if(!d){toast('Pick a deadline date');return}const dl=new Date(d+'T23:59:00').getTime();if(dl<Date.now()){toast('Pick a date in the future');return}
+ const pool=(mode=='shown'?view():S.entries).filter(e=>e.done<e.total);if(!pool.length){toast('No unfinished entries to commit');return}
+ const base={};pool.forEach(e=>{base[e.id]=e.done});S.fin={name:n,start:Date.now(),deadline:dl,ids:pool.map(e=>e.id),base,before:null,after:null};save();render()}
+function finToggle(id){const f=S.fin;if(!f)return;const e=S.entries.find(x=>x.id==id);if(!e)return;if(f.ids.includes(id))f.ids=f.ids.filter(x=>x!=id);else{f.ids.push(id);f.base[id]=e.done}save();render()}
+function finAddShown(){const f=S.fin;if(!f)return;let n=0;view().forEach(e=>{if(e.done<e.total&&!f.ids.includes(e.id)){f.ids.push(e.id);f.base[e.id]=e.done;n++}});toast(n?'Added '+n+' entries':'Nothing new to add');save();render()}
+function finArchive(){const f=S.fin;if(!f)return;dlg({title:'Finish and archive?',text:'This saves the results and photos to your past challenges and clears the active one. Add your after photo first if you want it kept.',ok:'Archive',onOk:()=>{const st=finStats(f);S.finHist=S.finHist||[];S.finHist.unshift(finSnap(f,st,Date.now()));S.fin=null;save();render()}})}
+function finCancel(){dlg({title:'Cancel this challenge?',text:'The challenge and its photos are discarded. Your entries and painting log are not touched.',ok:'Cancel challenge',danger:true,onOk:()=>{S.fin=null;save();render()}})}
+function finPhoto(k){finKind=k;$('fnFile').value='';$('fnFile').click()}
+function zoomFin(k){const f=S.fin;if(f&&f[k]){$('zoom').innerHTML='<img src="'+imgSrc(f[k])+'" style="max-width:100%;max-height:100%;border-radius:8px">';$('zoom').style.display='flex'}}
+$('fnFile').onchange=async e=>{const file=e.target.files[0];if(!file||!S.fin)return;toast('Saving photo…');try{const b=await finShrink(file,1000);S.fin[finKind]=await storeImg(b);save();render();toast('Photo saved ✓')}catch(x){toast('Could not use that image')}};
+function renderFin(){const b=$('finBox'),f=S.fin;let h='';
+ if(!f){const n=view().filter(e=>e.done<e.total).length,m=S.entries.filter(e=>e.done<e.total).length;
+  h=`<div class="card"><b>🏁 Start a challenge</b><div class="mut" style="margin:4px 0 8px">Set a deadline, commit some entries and take a dated "before" photo of your backlog, like Miniac's The Finisher. You can commit more than you expect to finish.</div><div class="row"><input id="fnName" class="grow" value="The Finisher"><input id="fnDate" type="date" value="${new Date().getFullYear()}-12-31"></div><div class="row" style="margin-top:8px"><button onclick="finStart('shown')" ${n?'':'disabled'}>Commit the ${n} unfinished entries shown</button><button class="ghost" onclick="finStart('all')" ${m?'':'disabled'}>All unfinished (${m})</button></div><div class="mut" style="font-size:12px;margin-top:6px">"Shown" follows your search and filters, so filter to one project or manufacturer first if you like.</div></div>`}
+ else{const st=finStats(f),days=Math.max(0,Math.ceil((f.deadline-Date.now())/864e5)),rem=st.tot-st.done,pct=st.tot?Math.round(st.done/st.tot*100):0,pace=finPace(),need=days>0?rem/(days/7):null;
+  let msg;if(rem<=0)msg='Everything you committed is done. 🎉 Add your after photo and archive it.';else if(days==0)msg='The deadline has arrived. Archive it to keep a record of what you finished.';else if(pace==null)msg='You need about '+need.toFixed(1)+' minis a week to finish. Log some painting and I will compare that with your real pace.';else if(pace>=need)msg='On track: you are averaging '+pace.toFixed(1)+' a week over the last 4 weeks and need '+need.toFixed(1)+'.';else{const proj=Date.now()+rem/pace*7*864e5;msg='Behind pace: you are averaging '+pace.toFixed(1)+' a week and need '+need.toFixed(1)+'. At that pace you would finish around '+fmtD(proj)+'. You could trim the list or move the date.'}
+  const note='Write "'+f.name+'" and today\'s date ('+fmtD(Date.now())+') on a note and keep it visible in the photo.';
+  const ph=(k,l)=>f[k]?`<div style="text-align:center"><img src="${imgSrc(f[k])}" style="height:90px;border-radius:8px;cursor:zoom-in" onclick="zoomFin('${k}')"><div class="mut" style="font-size:12px">${l}</div><button class="ghost" onclick="finPhoto('${k}')">Replace</button></div>`:`<div style="text-align:center"><button class="ghost" onclick="finPhoto('${k}')">📷 ${l} photo</button></div>`;
+  h=`<div class="card" style="border:2px solid var(--acc2)"><div class="row"><b class="grow" style="font-size:20px">🏁 ${esc(f.name)}</b><span class="mut">${days} day${days==1?'':'s'} left · ends ${fmtD(f.deadline)}</span></div><div class="bar"><i style="width:${pct}%"></i></div><div><b>${st.done}</b> of ${st.tot} minis finished since ${fmtD(f.start)} · ${st.ec} entr${st.ec==1?'y':'ies'} completed</div><div class="mut" style="margin-top:4px">${msg}</div>
+<div class="row" style="margin-top:10px;align-items:flex-start">${ph('before','Before')}${ph('after','After')}<div class="mut grow" style="font-size:12px">${esc(note)}</div></div>
+<details style="margin-top:8px"><summary class="mut">${st.ents.length} committed entries</summary>${st.ents.map(e=>`<div class="row" style="margin:3px 0"><span class="grow">${esc(e.name)}</span><span class="mut">${e.done}/${e.total}</span><button class="ghost" onclick="finToggle('${e.id}')">Remove</button></div>`).join('')}<button class="ghost" style="margin-top:6px" onclick="finAddShown()">+ Add shown entries</button></details>
+<textarea id="finTxt" rows="5" readonly style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);font:12px monospace;padding:8px">${esc(sumText(finSnap(f,st,Date.now())))}</textarea>
+<div class="row" style="margin-top:8px"><button onclick="finCopy()">Copy summary</button><button class="ghost" onclick="finArchive()">Finish &amp; archive</button><button class="ghost" onclick="finCancel()">Cancel challenge</button></div></div>`}
+ const hist=(S.finHist||[]).length?'<h2 style="margin-top:16px">Past challenges</h2>'+S.finHist.map((x,i)=>`<div class="card"><div class="row"><b class="grow">${esc(x.name)}</b><span class="mut">${fmtD(x.start)} → ${fmtD(x.end)}</span></div><div>${x.done} of ${x.tot} minis · ${x.ec} entr${x.ec==1?'y':'ies'} completed</div><div class="row" style="margin-top:6px">${x.before?`<img src="${imgSrc(x.before)}" style="height:60px;border-radius:6px">`:''}${x.after?`<img src="${imgSrc(x.after)}" style="height:60px;border-radius:6px">`:''}<span class="grow"></span><button class="ghost" onclick="histCopy(${i})">Copy summary</button><button class="ghost" onclick="histDel(${i})">Delete</button></div></div>`).join(''):'';
+ b.innerHTML=h+hist}
+load();
+</script></body></html>
