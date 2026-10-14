@@ -4,7 +4,7 @@ A free, single-file web app for miniature painters with a big backlog.
 Add your unpainted units, roll a random project, a colour-scheme card and a
 technique, then log what you paint and watch the pile shrink.
 
-**Live app:** `https://mhewson.github.io/mhewson.github.com/`
+**Live app:** https://mhewson.github.io/
 
 <!-- Add a screenshot here: ![Screenshot](screenshot.png) -->
 
@@ -36,15 +36,35 @@ makes small wins visible.
   project".
 - **Challenge mode**: set a deadline, commit entries, take a dated before photo
   and after photo, and get a pace check and a summary to share. Inspired by
-  Miniac's The Finisher.
+  [Miniac's The Finisher](https://www.youtube.com/watch?v=a6L4wNoaHoM).
 - **Undo**: every log has an undo, and each entry has a minus button.
 - **Import and backup**: paste or upload a spreadsheet, and copy a full
   backup you can restore later.
 
 ## Using it
 
-Open the live link, or download `index.html` and open it in a browser.
-There is nothing to install.
+Open the live link, or keep your own copy. There is nothing to install.
+
+### Get your own copy
+
+It is one file, so copying it is easy, and the MIT licence lets you keep,
+change and share it.
+
+- **In the app:** scroll to **Share this app** and press **Save a copy of this
+  app**. That gives you a single file to keep or send to a friend, who just
+  double-clicks it. No GitHub account needed.
+- **Download it:** open [`index.html`](index.html) in this repository and click
+  the **Download raw file** button, or use **Code → Download ZIP**. Save it
+  anywhere and double-click it to open it in your browser.
+- **Make your own version:** click **Fork** at the top of this page. In your
+  fork go to **Settings → Pages**, choose **Deploy from a branch**, pick
+  `main` and `/ (root)`, and you will have your own live link to change as you
+  like.
+
+Your painting data is saved in your browser for whichever address or file you
+open, so a downloaded copy starts with an empty pile. To move your pile between
+copies, use **Copy full backup** and paste it into the import box of the other
+one.
 
 ### Importing from a spreadsheet
 
